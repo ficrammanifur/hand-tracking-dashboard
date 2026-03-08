@@ -12,8 +12,6 @@
 
 Sistem kontrol nirkabel menggunakan gesture tangan berbasis AI MediaPipe, diintegrasikan dengan ESP32 melalui MQTT broker. Seluruh proses AI berjalan di browser (edge computing) tanpa memerlukan backend server.
 
-</div>
-
 ## 📸 Dashboard Preview
 
 ![Dashboard Preview](assets/dashboard-preview.png)
@@ -21,6 +19,8 @@ Sistem kontrol nirkabel menggunakan gesture tangan berbasis AI MediaPipe, diinte
 
 ![Demo GIF](assets/demo.gif)
 *Demo: Gestur tangan mengendalikan 5 LED pada simulator Wokwi*
+
+</div>
 
 ---
 
