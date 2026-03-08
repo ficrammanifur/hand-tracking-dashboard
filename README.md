@@ -1,3 +1,5 @@
+<div align="center">
+    
 # 🖐️ AI Hand-Tracking IoT Dashboard
 
 ![GitHub](https://img.shields.io/badge/version-1.0.0-blue)
@@ -9,6 +11,8 @@
 **Real-Time Computer Vision & MQTT Control for ESP32 Ecosystem**
 
 Sistem kontrol nirkabel menggunakan gesture tangan berbasis AI MediaPipe, diintegrasikan dengan ESP32 melalui MQTT broker.
+
+</div>
 
 ---
 
@@ -223,7 +227,7 @@ Logika utama menggunakan perbandingan koordinat sumbu Y pada landmark MediaPipe:
 
 **Contoh Skenario Payload**
 
-- `"10000"` : Hanya LED Merah (Ibu jari) menyala.  
+- `"10000"` : Hanya LED Mera<div align="center">h (Ibu jari) menyala.  
 - `"01100"` : LED Hijau dan Biru menyala (Gestur 'Peace'/'V').  
 - `"11111"` : Semua LED menyala (Telapak tangan terbuka).  
 - `"00000"` : Semua LED mati (Tangan mengepal).
@@ -241,10 +245,10 @@ Logika utama menggunakan perbandingan koordinat sumbu Y pada landmark MediaPipe:
 
 ---
 
+<div align="center">
+
 ⭐ **Berikan Star jika proyek ini membantu Anda!**
 
 ⬆ [Kembali ke Atas](#-ai-hand-tracking-iot-dashboard)
 
-3. Memperbaiki struktur tabel, kode blok, dan diagram agar sesuai standar Markdown.
-4. Menambahkan link yang hilang (GitHub Pages dan Wokwi) sebagai placeholder.
-5. Merapikan spasi dan heading agar lebih konsisten.
+</div>
