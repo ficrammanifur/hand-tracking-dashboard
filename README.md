@@ -14,8 +14,6 @@ Sistem kontrol nirkabel menggunakan gesture tangan berbasis AI MediaPipe, diinte
 
 </div>
 
----
-
 ## 📸 Dashboard Preview
 
 ![Dashboard Preview](assets/dashboard-preview.png)
