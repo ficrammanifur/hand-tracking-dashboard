@@ -115,7 +115,6 @@
         let lastPayload = "00000";
 
         // --- KONFIGURASI MQTT ---
-        // Menggunakan WebSockets (wss) untuk broker emqx karena dijalankan di browser
         const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
 
         client.on('connect', () => {
@@ -144,7 +143,7 @@
             }
         }
 
-        // --- LOGIKA MEDIAPIPE ---
+        // --- LOGIKA MEDIAPIPE YANG DIPERBAIKI ---
         function onResults(results) {
             if (loadingOverlay.style.display !== 'none') {
                 loadingOverlay.style.display = 'none';
@@ -153,34 +152,46 @@
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
             
-            let fingerStates = [0, 0, 0, 0, 0]; // Jempol, Telunjuk, Tengah, Manis, Kelingking
+            let fingerStates = [0, 0, 0, 0, 0];
 
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const landmarks = results.multiHandLandmarks[0];
+                const handedness = results.multiHandedness ? results.multiHandedness[0].label : 'Right';
                 
                 // Gambar landmark di kanvas
                 drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#00FF7F', lineWidth: 3});
                 drawLandmarks(canvasCtx, landmarks, {color: '#FF3B3B', lineWidth: 1, radius: 3});
 
-                // Hitung jari (Logika: jika ujung jari di atas sendi PIP)
-                // 1. Jempol (Thumb) - Bandingkan koordinat X karena jempol gerak horizontal
-                // (Perlu penyesuaian tergantung tangan kiri/kanan, tapi ini versi sederhananya)
-                if (landmarks[4].x < landmarks[3].x - 0.01) fingerStates[0] = 1;
-
-                // 2. Telunjuk (Index) - Tip (8) vs PIP (6)
+                // LOGIKA JARI YANG DIPERBAIKI:
+                // Untuk jari 2-5 (telunjuk, tengah, manis, kelingking): 
+                // Jari terbuka jika ujung jari (TIP) berada di ATAS sendi PIP (nilai y lebih kecil)
+                
+                // Telunjuk (Index): TIP (8) vs PIP (6)
                 if (landmarks[8].y < landmarks[6].y) fingerStates[1] = 1;
 
-                // 3. Tengah (Middle) - Tip (12) vs PIP (10)
+                // Tengah (Middle): TIP (12) vs PIP (10)
                 if (landmarks[12].y < landmarks[10].y) fingerStates[2] = 1;
 
-                // 4. Manis (Ring) - Tip (16) vs PIP (14)
+                // Manis (Ring): TIP (16) vs PIP (14)
                 if (landmarks[16].y < landmarks[14].y) fingerStates[3] = 1;
 
-                // 5. Kelingking (Pinky) - Tip (20) vs PIP (18)
+                // Kelingking (Pinky): TIP (20) vs PIP (18)
                 if (landmarks[20].y < landmarks[18].y) fingerStates[4] = 1;
+
+                // LOGIKA JEMPOL YANG DIPERBAIKI:
+                // Jempol: bandingkan posisi x dari TIP (4) dengan IP (3) dan MCP (2)
+                // Untuk tangan kanan: jempol terbuka jika landmarks[4].x > landmarks[3].x
+                // Untuk tangan kiri: jempol terbuka jika landmarks[4].x < landmarks[3].x
+                if (handedness === 'Right') {
+                    // Tangan kanan: jempol di kiri layar (karena mirror)
+                    if (landmarks[4].x > landmarks[3].x) fingerStates[0] = 1;
+                } else {
+                    // Tangan kiri: jempol di kanan layar (karena mirror)
+                    if (landmarks[4].x < landmarks[3].x) fingerStates[0] = 1;
+                }
             }
 
-            // Kirim string "11000" ke MQTT
+            // Kirim string ke MQTT
             sendCommand(fingerStates.join(''));
             
             canvasCtx.restore();
@@ -193,8 +204,8 @@
         hands.setOptions({
             maxNumHands: 1,
             modelComplexity: 1,
-            minDetectionConfidence: 0.7,
-            minTrackingConfidence: 0.7
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
         });
 
         hands.onResults(onResults);
