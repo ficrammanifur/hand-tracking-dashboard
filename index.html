@@ -17,12 +17,6 @@
         #video-element { width: 100%; height: auto; transform: scaleX(-1); display: block; }
         .finger-indicator { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #475569; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
         .finger-active { background-color: #10b981; border-color: #10b981; color: white; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); }
-        .debug-info { position: fixed; bottom: 10px; left: 10px; background: black; color: lime; padding: 5px; font-family: monospace; font-size: 12px; z-index: 1000; }
-        .pin-red { background-color: #ef4444; }
-        .pin-green { background-color: #10b981; }
-        .pin-blue { background-color: #3b82f6; }
-        .pin-yellow { background-color: #f59e0b; }
-        .pin-purple { background-color: #8b5cf6; }
     </style>
 </head>
 <body class="bg-slate-900 text-white min-h-screen p-4 flex flex-col items-center">
@@ -47,27 +41,27 @@
                 <canvas id="output-canvas"></canvas>
             </div>
             
-            <!-- Finger Status Display dengan Warna LED -->
+            <!-- Finger Status Display -->
             <div class="bg-slate-800 p-4 rounded-xl flex justify-around items-center border border-slate-700">
                 <div class="flex flex-col items-center gap-2">
-                    <div id="f-0" class="finger-indicator" style="border-color: #ef4444;">👍</div>
-                    <span class="text-xs text-slate-400">Jempol (Red)</span>
+                    <div id="f-0" class="finger-indicator">1</div>
+                    <span class="text-xs text-slate-400">Jempol</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                    <div id="f-1" class="finger-indicator" style="border-color: #10b981;">☝️</div>
-                    <span class="text-xs text-slate-400">Telunjuk (Green)</span>
+                    <div id="f-1" class="finger-indicator">2</div>
+                    <span class="text-xs text-slate-400">Telunjuk</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                    <div id="f-2" class="finger-indicator" style="border-color: #3b82f6;">✌️</div>
-                    <span class="text-xs text-slate-400">Tengah (Blue)</span>
+                    <div id="f-2" class="finger-indicator">3</div>
+                    <span class="text-xs text-slate-400">Tengah</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                    <div id="f-3" class="finger-indicator" style="border-color: #f59e0b;">3</div>
-                    <span class="text-xs text-slate-400">Manis (Yellow)</span>
+                    <div id="f-3" class="finger-indicator">4</div>
+                    <span class="text-xs text-slate-400">Manis</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                    <div id="f-4" class="finger-indicator" style="border-color: #8b5cf6;">5</div>
-                    <span class="text-xs text-slate-400">Kelingking (Purple)</span>
+                    <div id="f-4" class="finger-indicator">5</div>
+                    <span class="text-xs text-slate-400">Kelingking</span>
                 </div>
             </div>
         </div>
@@ -82,7 +76,7 @@
                 <div class="space-y-3 text-sm">
                     <div class="flex justify-between text-slate-400">
                         <span>Broker:</span>
-                        <span class="text-white">broker.emqx.io:1883</span>
+                        <span class="text-white">broker.emqx.io</span>
                     </div>
                     <div class="flex justify-between text-slate-400">
                         <span>Topic:</span>
@@ -98,48 +92,17 @@
                 </div>
             </div>
 
-            <!-- LED Status berdasarkan ESP32 -->
-            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
-                <h3 class="font-bold mb-3">LED Status (ESP32)</h3>
-                <div class="grid grid-cols-5 gap-2 text-center text-xs">
-                    <div>
-                        <div id="led-0" class="w-8 h-8 mx-auto rounded-full bg-slate-600 mb-1"></div>
-                        <span>Red (25)</span>
-                    </div>
-                    <div>
-                        <div id="led-1" class="w-8 h-8 mx-auto rounded-full bg-slate-600 mb-1"></div>
-                        <span>Green (26)</span>
-                    </div>
-                    <div>
-                        <div id="led-2" class="w-8 h-8 mx-auto rounded-full bg-slate-600 mb-1"></div>
-                        <span>Blue (27)</span>
-                    </div>
-                    <div>
-                        <div id="led-3" class="w-8 h-8 mx-auto rounded-full bg-slate-600 mb-1"></div>
-                        <span>Yellow (14)</span>
-                    </div>
-                    <div>
-                        <div id="led-4" class="w-8 h-8 mx-auto rounded-full bg-slate-600 mb-1"></div>
-                        <span>Purple (12)</span>
-                    </div>
-                </div>
-            </div>
-
             <div class="bg-blue-900/20 p-5 rounded-xl border border-blue-500/30">
-                <h3 class="font-bold text-blue-400 mb-2">Mapping Pin ESP32:</h3>
-                <ul class="text-xs space-y-1 text-slate-300">
-                    <li><span class="text-red-500">●</span> message[0] = pin 25 (Red) - Jempol</li>
-                    <li><span class="text-green-500">●</span> message[1] = pin 26 (Green) - Telunjuk</li>
-                    <li><span class="text-blue-500">●</span> message[2] = pin 27 (Blue) - Tengah</li>
-                    <li><span class="text-yellow-500">●</span> message[3] = pin 14 (Yellow) - Manis</li>
-                    <li><span class="text-purple-500">●</span> message[4] = pin 12 (Purple) - Kelingking</li>
+                <h3 class="font-bold text-blue-400 mb-2">Instruksi Wokwi:</h3>
+                <ul class="text-xs space-y-2 text-slate-300">
+                    <li>1. Jalankan simulasi ESP32 di Wokwi.</li>
+                    <li>2. Pastikan pin sudah sesuai (25, 26, 27, 14, 12).</li>
+                    <li>3. Buka tangan Anda di depan kamera.</li>
+                    <li>4. Setiap jari yang terbuka akan menyalakan LED yang sesuai di Wokwi!</li>
                 </ul>
             </div>
         </div>
     </div>
-
-    <!-- Debug info -->
-    <div class="debug-info" id="debug-info"></div>
 
     <script>
         const videoElement = document.getElementById('video-element');
@@ -148,22 +111,15 @@
         const loadingOverlay = document.getElementById('loading');
         const mqttStatusEl = document.getElementById('mqtt-status');
         const payloadEl = document.getElementById('payload-val');
-        const debugInfo = document.getElementById('debug-info');
 
         let lastPayload = "00000";
-        let lastDebug = "";
 
-        // --- KONFIGURASI MQTT (SESUAI ESP32) ---
-        // Gunakan WebSocket port 8084 untuk koneksi browser
-        const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
-            clientId: 'webclient_' + Math.random().toString(16).substr(2, 8),
-            clean: true
-        });
+        // --- KONFIGURASI MQTT ---
+        const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
 
         client.on('connect', () => {
             mqttStatusEl.innerText = 'TERHUBUNG KE BROKER';
             mqttStatusEl.className = 'text-emerald-500 font-bold text-xs uppercase tracking-wider';
-            console.log('MQTT Connected');
         });
 
         client.on('error', (err) => {
@@ -172,43 +128,22 @@
             mqttStatusEl.className = 'text-red-500 font-bold text-xs';
         });
 
-        function updateLEDIndicators(payload) {
-            const colors = ['red', 'green', 'blue', 'yellow', 'purple'];
-            for(let i=0; i<5; i++) {
-                const led = document.getElementById(`led-${i}`);
-                if(payload[i] === '1') {
-                    led.className = `w-8 h-8 mx-auto rounded-full bg-${colors[i]}-500 mb-1`;
-                } else {
-                    led.className = 'w-8 h-8 mx-auto rounded-full bg-slate-600 mb-1';
-                }
-            }
-        }
-
         function sendCommand(payload) {
             if (payload !== lastPayload) {
                 lastPayload = payload;
                 payloadEl.textContent = payload;
-                
-                // Kirim ke MQTT
                 client.publish('OpenCV-IoT6601', payload);
-                console.log('MQTT Send:', payload);
                 
                 // Update UI indikator bulat
                 for(let i=0; i<5; i++) {
                     const el = document.getElementById(`f-${i}`);
-                    if(payload[i] === '1') {
-                        el.classList.add('finger-active');
-                    } else {
-                        el.classList.remove('finger-active');
-                    }
+                    if(payload[i] === '1') el.classList.add('finger-active');
+                    else el.classList.remove('finger-active');
                 }
-                
-                // Update LED indicators
-                updateLEDIndicators(payload);
             }
         }
 
-        // --- DETEKSI JARI (SESUAI DENGAN ESP32) ---
+        // --- LOGIKA MEDIAPIPE YANG DISELARASKAN DENGAN ESP32 ---
         function onResults(results) {
             if (loadingOverlay.style.display !== 'none') {
                 loadingOverlay.style.display = 'none';
@@ -223,42 +158,36 @@
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const landmarks = results.multiHandLandmarks[0];
                 
-                // Gambar landmark
+                // Gambar landmark di kanvas
                 drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#00FF7F', lineWidth: 3});
                 drawLandmarks(canvasCtx, landmarks, {color: '#FF3B3B', lineWidth: 1, radius: 3});
 
-                // DETEKSI JARI:
-                // Jari TERBUKA jika ujung jari (tip) berada di ATAS sendi tengah (PIP)
-                // Koordinat y: nilai lebih kecil = lebih atas
+                // DETEKSI JARI UNTUK ESP32:
+                // Mapping ke ESP32: [0]=pin25(jempol), [1]=pin26(telunjuk), [2]=pin27(tengah), [3]=pin14(manis), [4]=pin12(kelingking)
                 
-                // Telunjuk (index 8 vs 6) - pin Green (26)
+                // Jari 2-5 (telunjuk, tengah, manis, kelingking)
+                // TERBUKA jika ujung jari (tip) berada di ATAS sendi PIP (nilai y lebih kecil)
+                
+                // Telunjuk (indeks 8 vs 6) - pin 26
                 if (landmarks[8].y < landmarks[6].y) fingerStates[1] = 1;
                 
-                // Tengah (12 vs 10) - pin Blue (27)
+                // Tengah (indeks 12 vs 10) - pin 27
                 if (landmarks[12].y < landmarks[10].y) fingerStates[2] = 1;
                 
-                // Manis (16 vs 14) - pin Yellow (14)
+                // Manis (indeks 16 vs 14) - pin 14
                 if (landmarks[16].y < landmarks[14].y) fingerStates[3] = 1;
                 
-                // Kelingking (20 vs 18) - pin Purple (12)
+                // Kelingking (indeks 20 vs 18) - pin 12
                 if (landmarks[20].y < landmarks[18].y) fingerStates[4] = 1;
                 
-                // JEMPOL (khusus):
+                // JEMPOL (indeks 4 vs 3) - pin 25
                 // Jempol terbuka jika ujung jempol (4) berada di KANAN sendi jempol (3)
-                // Karena mirror effect, kita gunakan logika terbalik
                 if (landmarks[4].x > landmarks[3].x) {
-                    fingerStates[0] = 1; // Jempol terbuka - pin Red (25)
-                }
-
-                // Debug
-                const debug = `Payload: ${fingerStates.join('')} | Jempol: ${landmarks[4].x.toFixed(3)} > ${landmarks[3].x.toFixed(3)}`;
-                if (debug !== lastDebug) {
-                    lastDebug = debug;
-                    debugInfo.textContent = debug;
+                    fingerStates[0] = 1;
                 }
             }
 
-            // Kirim ke MQTT
+            // Kirim string ke MQTT
             sendCommand(fingerStates.join(''));
             
             canvasCtx.restore();
@@ -288,13 +217,6 @@
         });
 
         camera.start();
-
-        // Reset loading jika terlalu lama
-        setTimeout(() => {
-            if (loadingOverlay.style.display !== 'none') {
-                loadingOverlay.style.display = 'none';
-            }
-        }, 5000);
     </script>
 </body>
 </html>
