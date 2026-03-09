@@ -1,287 +1,247 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Hand Tracking to ESP32 MQTT</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-
-<!-- MediaPipe -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-
-<!-- MQTT -->
-<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-
-<style>
-
-.video-container{
-position:relative;
-width:100%;
-max-width:640px;
-margin:auto;
-overflow:hidden;
-border-radius:1rem;
-}
-
-canvas{
-position:absolute;
-top:0;
-left:0;
-width:100%;
-height:100%;
-transform:scaleX(-1);
-}
-
-#video-element{
-width:100%;
-height:auto;
-transform:scaleX(-1);
-display:block;
-}
-
-.finger-indicator{
-width:40px;
-height:40px;
-border-radius:50%;
-border:2px solid #475569;
-display:flex;
-align-items:center;
-justify-content:center;
-transition:all .3s;
-}
-
-.finger-active{
-background:#10b981;
-border-color:#10b981;
-color:white;
-box-shadow:0 0 15px rgba(16,185,129,.5);
-}
-
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Tracking to ESP32 MQTT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- MediaPipe Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <!-- MQTT.js -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        .video-container { position: relative; width: 100%; max-width: 640px; margin: auto; overflow: hidden; border-radius: 1rem; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scaleX(-1); }
+        #video-element { width: 100%; height: auto; transform: scaleX(-1); display: block; }
+        .finger-indicator { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #475569; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+        .finger-active { background-color: #10b981; border-color: #10b981; color: white; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); }
+        .debug-info { position: fixed; bottom: 10px; left: 10px; background: black; color: lime; padding: 5px; font-family: monospace; font-size: 12px; z-index: 1000; }
+    </style>
 </head>
-
 <body class="bg-slate-900 text-white min-h-screen p-4 flex flex-col items-center">
 
-<header class="text-center mb-6">
-
-<h1 class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-Hand Tracking IoT Controller
-</h1>
-
-<p class="text-slate-400">
-MediaPipe → MQTT → ESP32 (Wokwi)
-</p>
-
-</header>
-
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full max-w-6xl">
-
-<div class="lg:col-span-2 space-y-4">
-
-<div class="video-container bg-black shadow-2xl border-4 border-slate-800">
-
-<video id="video-element" autoplay playsinline></video>
-<canvas id="output-canvas"></canvas>
-
-</div>
-
-<div class="bg-slate-800 p-4 rounded-xl flex justify-around items-center border border-slate-700">
-
-<div class="flex flex-col items-center gap-2">
-<div id="f-0" class="finger-indicator">1</div>
-<span class="text-xs text-slate-400">Jempol</span>
-</div>
-
-<div class="flex flex-col items-center gap-2">
-<div id="f-1" class="finger-indicator">2</div>
-<span class="text-xs text-slate-400">Telunjuk</span>
-</div>
-
-<div class="flex flex-col items-center gap-2">
-<div id="f-2" class="finger-indicator">3</div>
-<span class="text-xs text-slate-400">Tengah</span>
-</div>
-
-<div class="flex flex-col items-center gap-2">
-<div id="f-3" class="finger-indicator">4</div>
-<span class="text-xs text-slate-400">Manis</span>
-</div>
-
-<div class="flex flex-col items-center gap-2">
-<div id="f-4" class="finger-indicator">5</div>
-<span class="text-xs text-slate-400">Kelingking</span>
-</div>
-
-</div>
-
-</div>
-
-<div class="space-y-4">
-
-<div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
-
-<h2 class="font-bold mb-4">
-MQTT Status
-</h2>
-
-<div class="text-sm space-y-2">
-
-<div class="flex justify-between text-slate-400">
-<span>Broker</span>
-<span class="text-white">broker.emqx.io</span>
-</div>
-
-<div class="flex justify-between text-slate-400">
-<span>Topic</span>
-<span class="text-blue-400">OpenCV-IoT6601</span>
-</div>
-
-<div class="flex justify-between text-slate-400">
-<span>Payload</span>
-<span id="payload-val" class="text-emerald-400 font-mono">00000</span>
-</div>
-
-<div>
-<span id="mqtt-status" class="text-yellow-500 text-xs">
-Menghubungkan MQTT...
-</span>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<script>
-
-const videoElement=document.getElementById('video-element');
-const canvasElement=document.getElementById('output-canvas');
-const canvasCtx=canvasElement.getContext('2d');
-
-const mqttStatus=document.getElementById('mqtt-status');
-const payloadVal=document.getElementById('payload-val');
-
-let lastPayload="00000";
-
-/* MQTT */
-
-const client=mqtt.connect('wss://broker.emqx.io:8084/mqtt');
-
-client.on('connect',()=>{
-mqttStatus.innerText="TERHUBUNG KE BROKER";
-mqttStatus.className="text-emerald-500 text-xs";
-});
-
-client.on('error',(err)=>{
-console.error(err);
-mqttStatus.innerText="MQTT ERROR";
-mqttStatus.className="text-red-500 text-xs";
-});
-
-function sendCommand(payload){
-
-if(payload!==lastPayload){
-
-lastPayload=payload;
-
-payloadVal.innerText=payload;
-
-client.publish('OpenCV-IoT6601',payload);
-
-for(let i=0;i<5;i++){
-
-const el=document.getElementById(`f-${i}`);
-
-if(payload[i]==='1'){
-el.classList.add('finger-active');
-}
-else{
-el.classList.remove('finger-active');
-}
-
-}
-
-}
-
-}
-
-/* MediaPipe */
-
-function onResults(results){
-
-canvasCtx.save();
-canvasCtx.clearRect(0,0,canvasElement.width,canvasElement.height);
-
-let fingerStates=[0,0,0,0,0];
-
-if(results.multiHandLandmarks && results.multiHandLandmarks.length>0){
-
-const landmarks=results.multiHandLandmarks[0];
-
-drawConnectors(canvasCtx,landmarks,HAND_CONNECTIONS,{color:'#00FF7F',lineWidth:3});
-drawLandmarks(canvasCtx,landmarks,{color:'#FF3B3B',lineWidth:1,radius:3});
-
-/* ===== PERBAIKAN JEMPOL ===== */
-
-if(landmarks[4].x > landmarks[3].x + 0.01) fingerStates[0]=1;
-
-/* ============================ */
-
-if(landmarks[8].y < landmarks[6].y) fingerStates[1]=1;
-
-if(landmarks[12].y < landmarks[10].y) fingerStates[2]=1;
-
-if(landmarks[16].y < landmarks[14].y) fingerStates[3]=1;
-
-if(landmarks[20].y < landmarks[18].y) fingerStates[4]=1;
-
-}
-
-sendCommand(fingerStates.join(''));
-
-canvasCtx.restore();
-
-}
-
-const hands=new Hands({
-locateFile:(file)=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-});
-
-hands.setOptions({
-maxNumHands:1,
-modelComplexity:1,
-minDetectionConfidence:0.7,
-minTrackingConfidence:0.7
-});
-
-hands.onResults(onResults);
-
-const camera=new Camera(videoElement,{
-
-onFrame:async()=>{
-
-canvasElement.width=videoElement.videoWidth;
-canvasElement.height=videoElement.videoHeight;
-
-await hands.send({image:videoElement});
-
-},
-
-width:640,
-height:480
-
-});
-
-camera.start();
-
-</script>
-
+    <header class="text-center mb-6">
+        <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+            Hand Tracking IoT Controller
+        </h1>
+        <p class="text-slate-400">MediaPipe → MQTT → ESP32 (Wokwi)</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full max-w-6xl">
+        
+        <!-- Video Panel -->
+        <div class="lg:col-span-2 space-y-4">
+            <div class="video-container bg-black shadow-2xl border-4 border-slate-800">
+                <div id="loading" class="absolute inset-0 flex flex-col items-center justify-center z-50 bg-slate-900/80">
+                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500 mb-2"></div>
+                    <span>Menghubungkan AI & Kamera...</span>
+                </div>
+                <video id="video-element" autoplay playsinline></video>
+                <canvas id="output-canvas"></canvas>
+            </div>
+            
+            <!-- Finger Status Display -->
+            <div class="bg-slate-800 p-4 rounded-xl flex justify-around items-center border border-slate-700">
+                <div class="flex flex-col items-center gap-2">
+                    <div id="f-0" class="finger-indicator">👍</div>
+                    <span class="text-xs text-slate-400">Jempol</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                    <div id="f-1" class="finger-indicator">☝️</div>
+                    <span class="text-xs text-slate-400">Telunjuk</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                    <div id="f-2" class="finger-indicator">✌️</div>
+                    <span class="text-xs text-slate-400">Tengah</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                    <div id="f-3" class="finger-indicator">3</div>
+                    <span class="text-xs text-slate-400">Manis</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                    <div id="f-4" class="finger-indicator">5</div>
+                    <span class="text-xs text-slate-400">Kelingking</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MQTT Panel -->
+        <div class="space-y-4">
+            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+                <h2 class="font-bold mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    MQTT Status
+                </h2>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between text-slate-400">
+                        <span>Broker:</span>
+                        <span class="text-white">broker.emqx.io</span>
+                    </div>
+                    <div class="flex justify-between text-slate-400">
+                        <span>Topic:</span>
+                        <span class="text-blue-400">OpenCV-IoT6601</span>
+                    </div>
+                    <div class="flex justify-between text-slate-400">
+                        <span>Payload:</span>
+                        <span id="payload-val" class="font-mono text-emerald-400">00000</span>
+                    </div>
+                    <div class="pt-2 border-t border-slate-700">
+                        <span id="mqtt-status" class="text-yellow-500 font-medium italic text-xs uppercase tracking-wider">Menghubungkan MQTT...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-blue-900/20 p-5 rounded-xl border border-blue-500/30">
+                <h3 class="font-bold text-blue-400 mb-2">Instruksi Wokwi:</h3>
+                <ul class="text-xs space-y-2 text-slate-300">
+                    <li>1. Jalankan simulasi ESP32 di Wokwi.</li>
+                    <li>2. Pastikan pin sudah sesuai (25, 26, 27, 14, 12).</li>
+                    <li>3. Buka tangan Anda di depan kamera.</li>
+                    <li>4. Setiap jari yang terbuka akan menyalakan LED yang sesuai di Wokwi!</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug info -->
+    <div class="debug-info" id="debug-info"></div>
+
+    <script>
+        const videoElement = document.getElementById('video-element');
+        const canvasElement = document.getElementById('output-canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const loadingOverlay = document.getElementById('loading');
+        const mqttStatusEl = document.getElementById('mqtt-status');
+        const payloadEl = document.getElementById('payload-val');
+        const debugInfo = document.getElementById('debug-info');
+
+        let lastPayload = "00000";
+        let lastDebug = "";
+
+        // --- KONFIGURASI MQTT ---
+        const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
+
+        client.on('connect', () => {
+            mqttStatusEl.innerText = 'TERHUBUNG KE BROKER';
+            mqttStatusEl.className = 'text-emerald-500 font-bold text-xs uppercase tracking-wider';
+        });
+
+        client.on('error', (err) => {
+            console.error('MQTT Error: ', err);
+            mqttStatusEl.innerText = 'KONEKSI GAGAL';
+            mqttStatusEl.className = 'text-red-500 font-bold text-xs';
+        });
+
+        function sendCommand(payload) {
+            if (payload !== lastPayload) {
+                lastPayload = payload;
+                payloadEl.textContent = payload;
+                client.publish('OpenCV-IoT6601', payload);
+                
+                // Update UI indikator bulat
+                for(let i=0; i<5; i++) {
+                    const el = document.getElementById(`f-${i}`);
+                    if(payload[i] === '1') {
+                        el.classList.add('finger-active');
+                    } else {
+                        el.classList.remove('finger-active');
+                    }
+                }
+            }
+        }
+
+        // --- LOGIKA DETEKSI JARI YANG SEDERHANA DAN PASTI ---
+        function onResults(results) {
+            if (loadingOverlay.style.display !== 'none') {
+                loadingOverlay.style.display = 'none';
+            }
+
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            
+            let fingerStates = [0, 0, 0, 0, 0]; // Default semua tertutup (0)
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                
+                // Gambar landmark di kanvas (tanpa mirror manual karena CSS sudah handle)
+                drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#00FF7F', lineWidth: 3});
+                drawLandmarks(canvasCtx, landmarks, {color: '#FF3B3B', lineWidth: 1, radius: 3});
+
+                // DETEKSI JARI - CARA PALING SEDERHANA:
+                // Jari TERBUKA jika ujung jari (tip) berada di ATAS sendi tengah (PIP)
+                // Dalam koordinat y: nilai lebih kecil = lebih atas
+                
+                // Telunjuk (index 8 vs 6)
+                if (landmarks[8].y < landmarks[6].y) fingerStates[1] = 1;
+                
+                // Tengah (12 vs 10)
+                if (landmarks[12].y < landmarks[10].y) fingerStates[2] = 1;
+                
+                // Manis (16 vs 14)
+                if (landmarks[16].y < landmarks[14].y) fingerStates[3] = 1;
+                
+                // Kelingking (20 vs 18)
+                if (landmarks[20].y < landmarks[18].y) fingerStates[4] = 1;
+                
+                // JEMPOL - CARA KHUSUS:
+                // Bandingkan ujung jempol (4) dengan sendi jempol (3)
+                // Jempol terbuka jika ujung jempol berada di KANAN sendi jempol
+                // Karena mirror effect, kita gunakan logika terbalik
+                if (landmarks[4].x > landmarks[3].x) {
+                    fingerStates[0] = 1; // Jempol terbuka
+                }
+
+                // Tampilkan nilai landmark untuk debugging
+                const debug = `Jempol: tip= ${landmarks[4].x.toFixed(3)}, pip= ${landmarks[3].x.toFixed(3)} | ${fingerStates.join('')}`;
+                if (debug !== lastDebug) {
+                    lastDebug = debug;
+                    debugInfo.textContent = debug;
+                    console.log('Finger states:', fingerStates.join(''), 'Raw:', 
+                        'Jempol:', landmarks[4].x.toFixed(3), '>', landmarks[3].x.toFixed(3),
+                        'Telunjuk:', landmarks[8].y.toFixed(3), '<', landmarks[6].y.toFixed(3));
+                }
+            }
+
+            // Kirim string ke MQTT (langsung dari fingerStates)
+            sendCommand(fingerStates.join(''));
+            
+            canvasCtx.restore();
+        }
+
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        hands.onResults(onResults);
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                canvasElement.width = videoElement.videoWidth;
+                canvasElement.height = videoElement.videoHeight;
+                await hands.send({image: videoElement});
+            },
+            width: 640,
+            height: 480
+        });
+
+        camera.start();
+
+        // Reset loading jika terlalu lama
+        setTimeout(() => {
+            if (loadingOverlay.style.display !== 'none') {
+                loadingOverlay.style.display = 'none';
+            }
+        }, 5000);
+    </script>
 </body>
 </html>
