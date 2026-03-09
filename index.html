@@ -13,8 +13,8 @@
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         .video-container { position: relative; width: 100%; max-width: 640px; margin: auto; overflow: hidden; border-radius: 1rem; }
-        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scaleX(-1); }
-        #video-element { width: 100%; height: auto; transform: scaleX(-1); display: block; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #video-element { width: 100%; height: auto; display: block; }
         .finger-indicator { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #475569; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
         .finger-active { background-color: #10b981; border-color: #10b981; color: white; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); }
     </style>
@@ -143,6 +143,20 @@
             }
         }
 
+        // Fungsi untuk mendeteksi apakah jari terbuka
+        function isFingerOpen(landmarks, tipIndex, pipIndex, mcpIndex, isThumb = false) {
+            if (isThumb) {
+                // Untuk jempol: bandingkan berdasarkan posisi x
+                // Karena mirror effect, kita gunakan logika sederhana
+                // Jempol terbuka jika ujung jempol (tip) lebih jauh dari telapak tangan
+                return Math.abs(landmarks[tipIndex].x - landmarks[pipIndex].x) > 0.05;
+            } else {
+                // Untuk jari lainnya: ujung jari harus di atas sendi pip
+                // Karena koordinat y semakin ke bawah semakin besar
+                return landmarks[tipIndex].y < landmarks[pipIndex].y;
+            }
+        }
+
         // --- LOGIKA MEDIAPIPE YANG DIPERBAIKI ---
         function onResults(results) {
             if (loadingOverlay.style.display !== 'none') {
@@ -152,43 +166,37 @@
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
             
+            // Mirror canvas untuk tampilan yang natural
+            canvasCtx.scale(-1, 1);
+            canvasCtx.translate(-canvasElement.width, 0);
+            
             let fingerStates = [0, 0, 0, 0, 0];
 
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const landmarks = results.multiHandLandmarks[0];
-                const handedness = results.multiHandedness ? results.multiHandedness[0].label : 'Right';
                 
                 // Gambar landmark di kanvas
                 drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#00FF7F', lineWidth: 3});
                 drawLandmarks(canvasCtx, landmarks, {color: '#FF3B3B', lineWidth: 1, radius: 3});
 
-                // LOGIKA JARI YANG DIPERBAIKI:
-                // Untuk jari 2-5 (telunjuk, tengah, manis, kelingking): 
-                // Jari terbuka jika ujung jari (TIP) berada di ATAS sendi PIP (nilai y lebih kecil)
+                // Deteksi jari dengan pendekatan yang lebih robust
+                // Jempol (indeks 4)
+                if (isFingerOpen(landmarks, 4, 3, 2, true)) fingerStates[0] = 1;
                 
-                // Telunjuk (Index): TIP (8) vs PIP (6)
-                if (landmarks[8].y < landmarks[6].y) fingerStates[1] = 1;
+                // Telunjuk (indeks 8)
+                if (isFingerOpen(landmarks, 8, 6, 5)) fingerStates[1] = 1;
+                
+                // Tengah (indeks 12)
+                if (isFingerOpen(landmarks, 12, 10, 9)) fingerStates[2] = 1;
+                
+                // Manis (indeks 16)
+                if (isFingerOpen(landmarks, 16, 14, 13)) fingerStates[3] = 1;
+                
+                // Kelingking (indeks 20)
+                if (isFingerOpen(landmarks, 20, 18, 17)) fingerStates[4] = 1;
 
-                // Tengah (Middle): TIP (12) vs PIP (10)
-                if (landmarks[12].y < landmarks[10].y) fingerStates[2] = 1;
-
-                // Manis (Ring): TIP (16) vs PIP (14)
-                if (landmarks[16].y < landmarks[14].y) fingerStates[3] = 1;
-
-                // Kelingking (Pinky): TIP (20) vs PIP (18)
-                if (landmarks[20].y < landmarks[18].y) fingerStates[4] = 1;
-
-                // LOGIKA JEMPOL YANG DIPERBAIKI:
-                // Jempol: bandingkan posisi x dari TIP (4) dengan IP (3) dan MCP (2)
-                // Untuk tangan kanan: jempol terbuka jika landmarks[4].x > landmarks[3].x
-                // Untuk tangan kiri: jempol terbuka jika landmarks[4].x < landmarks[3].x
-                if (handedness === 'Right') {
-                    // Tangan kanan: jempol di kiri layar (karena mirror)
-                    if (landmarks[4].x > landmarks[3].x) fingerStates[0] = 1;
-                } else {
-                    // Tangan kiri: jempol di kanan layar (karena mirror)
-                    if (landmarks[4].x < landmarks[3].x) fingerStates[0] = 1;
-                }
+                // Debug: tampilkan nilai di console (buka console dengan F12)
+                console.log('Finger states:', fingerStates.join(''));
             }
 
             // Kirim string ke MQTT
@@ -204,8 +212,8 @@
         hands.setOptions({
             maxNumHands: 1,
             modelComplexity: 1,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
+            minDetectionConfidence: 0.3,  // Diturunkan agar lebih sensitif
+            minTrackingConfidence: 0.3
         });
 
         hands.onResults(onResults);
