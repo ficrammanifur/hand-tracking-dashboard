@@ -170,7 +170,7 @@ hand-tracking-dashboard/
 ## 🚀 Quick Start
 
 1. **Jalankan Simulasi Perangkat**  
-   - Buka [Simulasi Wokwi ESP32](https://wokwi.com/projects/421496735837583361)  
+   - Buka [Simulasi Wokwi ESP32](https://wokwi.com/projects/417222504190755841)  
    - Klik tombol Start Simulation  
    - Pastikan Serial Monitor menampilkan `Connected to MQTT broker`
 
